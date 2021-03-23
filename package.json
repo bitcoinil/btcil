@@ -27,9 +27,19 @@
   },
   "homepage": "https://github.com/bitcoinli/bitil#readme",
   "dependencies": {
+    "boxen": "^5.0.0",
+    "chalk": "^4.1.0",
+    "cli-progress": "^3.9.0",
     "commander": "^7.2.0",
+    "listr": "^0.14.3",
+    "log-update": "^4.0.0",
+    "node-localstorage": "^2.1.6",
+    "nodejs-file-downloader": "^4.3.0",
+    "ora": "^5.4.0",
     "os-name": "^4.0.0",
     "prompts": "^2.4.0",
-    "tmp": "^0.2.1"
+    "tmp": "^0.2.1",
+    "yaml": "^2.0.0-4",
+    "zen-observable": "^0.8.15"
   }
 }

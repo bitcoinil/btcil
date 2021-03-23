@@ -1,0 +1,4 @@
+signatures: https://raw.githubusercontent.com/bitcoinil/signatures/master/
+binaries:
+  osx: https://guides.bitcoinil.org/assets/downloads/binaries/osx/BitcoinIL-Qt.dmg
+  windows: https://guides.bitcoinil.org/assets/downloads/binaries/windows/bitcoinil-0.21.0-win64-setup.exe
