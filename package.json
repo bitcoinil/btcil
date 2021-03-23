@@ -4,7 +4,11 @@
   "description": "command line util to install Bitcoin Israel wallets and miners",
   "main": "index.js",
   "scripts": {
+    "start": "node src/index.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "engines": {
+    "node": ">=14"
   },
   "repository": {
     "type": "git",
@@ -21,5 +25,11 @@
   "bugs": {
     "url": "https://github.com/bitcoinli/bitil/issues"
   },
-  "homepage": "https://github.com/bitcoinli/bitil#readme"
+  "homepage": "https://github.com/bitcoinli/bitil#readme",
+  "dependencies": {
+    "commander": "^7.2.0",
+    "os-name": "^4.0.0",
+    "prompts": "^2.4.0",
+    "tmp": "^0.2.1"
+  }
 }
