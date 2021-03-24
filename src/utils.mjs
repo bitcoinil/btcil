@@ -5,6 +5,8 @@ import { parse } from 'yaml'
 import path, { dirname } from 'path'
 import { setItem, getItem, removeItem } from './local-storage.mjs'
 import Downloader from 'nodejs-file-downloader'
+import boxen from 'boxen'
+import chalk from 'chalk'
 
 const tempCache = {}
 
@@ -62,7 +64,6 @@ export async function countRuns () {
 }
 
 export async function downloadFile (url, directory, fileName, options = {}) {
-
   const downloader = new Downloader({
     ...fileName ? { fileName } : {},
     url,
@@ -107,13 +108,15 @@ export async function downloadSignature (sigPath) {
 
   const savePath = path.resolve(tempPath, sigPath, '../')
   const saveFile = sigPath.split('/').pop() + '.sig'
-  console.log('SAVE PATH:', savePath)
-  console.log('SAVE FILE:', saveFile)
+  const filepath = path.resolve(savePath, saveFile)
   
   const file = await downloadFile(sigUrl, savePath, saveFile)
 
-  const data = readFile(path.resolve(savePath, saveFile), { encoding: 'utf8' })
-  return data
+  const signature = await readFile(path.resolve(savePath, saveFile), { encoding: 'utf8' })
+  return {
+    signature,
+    filepath
+  }
 }
 
 export async function compareCertificates (certificate) {
@@ -125,10 +128,27 @@ export async function compareCertificates (certificate) {
 }
 
 export function getPackageJson () {
-  const data = fs.readFileSync(path.resolve(getDirName(), '../package.json'))
+  const pathname = path.normalize(getDirName() + '/../').replace(/^\\/g, '')
+  console.log('pathname:', pathname)
+  const data = fs.readFileSync(pathname + 'package.json')
   const parsed = JSON.parse(data)
   return parsed
 }
 
 export const sleep = (time = 1000) =>
   new Promise(r => setTimeout(r, time))
+
+export const errorBox = (code = 1001, message = 'Fatal Error') =>
+  console.log(boxen(chalk`{red Error}\n{dim Code: ${code}}\n\n${message}\n\n{dim https://guides.bitcoinil.org/errors/error-${code}}`, { padding: 1, dimBorder: true }))
+
+  /**
+ * Converts a long string of bytes into a readable format e.g KB, MB, GB, TB, YB
+ * 
+ * @param {Int} num The number of bytes.
+ */
+export function readableBytes(bytes) {
+  var i = Math.floor(Math.log(bytes) / Math.log(1024)),
+  sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+  return (bytes / Math.pow(1024, i)).toFixed(2) * 1 + ' ' + sizes[i];
+}

@@ -11,77 +11,90 @@ import cliSpinners from 'cli-spinners'
 import { prepareInstaller } from './tasks.mjs';
 import { confirmInstallation } from './tasks.mjs';
 import { sleep } from './utils.mjs';
+import chalk from 'chalk';
+import boxen from 'boxen';
+import { errorBox } from './utils.mjs';
+import { getSystemModule } from './platforms/index.mjs';
+import { selectWallet } from './tasks.mjs';
+import { selectMiner } from './tasks.mjs';
+import { processInstall } from './tasks.mjs';
+import { prepareProperties } from './tasks.mjs';
 
 const winInstall = 'https://guides.bitcoinil.org/assets/downloads/binaries/windows/bitcoinil-0.21.0-win64-setup.exe'
 
 const mainTasks = new Listr([
   {
     title: 'Prepare installer',
-    task: prepareInstaller
+    task: prepareInstaller,
+    options: {
+      persistentOutput: true
+    }
+  },
+  
+  {
+    title: 'Load properties',
+    task: prepareProperties
+  },
+
+  {
+    title: 'Install wallet',
+    enabled: ctx => ctx.platform,
+    task: selectWallet,
+    options: {
+      persistentOutput: true
+    }
+  },
+  {
+    title: 'Install miner',
+    enabled: ctx => ctx.platform?.miners,
+    skip: ctx => ctx.options.install && !ctx.options.installMiner,
+    task: selectMiner,
+    options: {
+      persistentOutput: true
+    }
   },
   {
     title: 'Confirm installation',
-    task: confirmInstallation
+    enabled: ctx => ctx.platform,
+    task: confirmInstallation,
+    options: {
+      persistentOutput: true
+    }
   },
   {
-    title: 'Detect OS',
-    task: async (ctx, task) => {
-      const thisOs = osName()
-      task.output = 'OS Detected: ' + thisOs
-      task.output = JSON.stringify(ctx, 1, 1)
-      await sleep(5000)
-      // await new Promise(r => setTimeout(r, 5000))
-      task.title = 'Detected OS: ' + thisOs
-      await sleep(5000)
-      // await new Promise(r => setTimeout(r, 5000))
-
-      return 'cool'
-
-
+    title: 'Install',
+    enabled: ctx => ctx.doInstall,
+    task: processInstall,
+    options: {
+      persistentOutput: true
     }
-  }
+  },
 ],
 { concurrent: false }
 )
 initialize()
 
-async function walletWizard () {
-  const thisOs = osName()
-  await countRuns()
-
-  const isStart = await prompts({
-    type: 'confirm',
-    name: 'confirmed',
-    initial: true,
-    message: `You are about to install ${thisOs} - are you sure?`
-  })
-  console.log('what is isStart:', isStart)
-
-  if (isStart.confirmed) {
-    let osWizardName = thisOs.match(/^macOS/) ? 'osx' : thisOs.match(/^Windows/) ? 'windows' : 'linux'
-    
-    const ofos = await import('./wizard/' + osWizardName + '.mjs')
-    console.log('ofos ready:', ofos)
-    const installResult = ofos.installWallet()
-    console.log('install result:', installResult)
-    installResult.run().catch(err => {
-      console.error(err);
-    });
-
-  } else {
-    console.log('Aborting.')
-  }
-}
 
 async function initialize () {
   // Load Args
-  
+  const os = osName()
+  const platform = await getSystemModule(os)
+  await countRuns()
+
   const program = new Command();
+
+  let _l
   
   program
-    .addOption(new Option('-i, --install [wallet]', 'Install BitcoinIL Wallet').choices(['core']))
-    .addOption(new Option('-m, --install-miner [type]', 'Install BitcoinIL Compatible Miner').choices(['CPU', 'GPU', 'All']))
-    .addOption(new Option('-s, --silent', 'Silent (unattended) operation - suppress all output except errors').choices(['CPU', 'GPU', 'All']))
+    .addOption(new Option('-i, --install [wallet]', 'Install BitcoinIL wallet').choices(platform.wallets.map(({name}) => name)))
+    .addOption(new Option('-b, --build', 'Build wallet from source' + `${(_l = platform.wallets.filter(({build}) => build)) && _l.length ? ` (supported wallets: ${_l.map(({name}) => name).join(', ')})` : ' (not supported)'}`))
+    .addOption(new Option('-m, --install-miner [type]', 'Install BitcoinIL Compatible Miner'))
+    .addOption(new Option('-t, --testnet', 'Use testnet'))
+    .addOption(new Option('-p, --password <string>', 'Use pre-defined password'))
+    .addOption(new Option('-c, --confirm', 'Confirm all user prompts automatically'))
+    .addOption(new Option('-s, --silent', 'Silent (unattended) operation - suppress all output except errors'))
+    .addOption(new Option('-o, --ignore-certificate', 'Supress certificate mismatch errors'))
+    .addOption(new Option('-is, --ignore-signatures', 'Supress file signature errors'))
     .parse();
   
   const options = program.opts();
@@ -105,13 +118,13 @@ async function initialize () {
   logUpdate(welcome())
   logUpdate.done()
   
-  // if (options.install) {
-  //   console.log('Installing wallet...')
-  //   mainTasks.run()
-  //   walletWizard()
-  // }
-
-  mainTasks.run({ options })
-  
-  // Init Wizard
+  try {
+    const res = await mainTasks.run({ options })
+    if (!res.platform) console.error(errorBox(1002, `Platform not supported`))
+  } catch (error) {
+    if (error.toString() !== 'Error: Aborted')
+      console.log(errorBox(1003, error))
+    
+    process.exit(1)
+  }
 }
