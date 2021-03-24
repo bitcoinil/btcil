@@ -129,3 +129,6 @@ export function getPackageJson () {
   const parsed = JSON.parse(data)
   return parsed
 }
+
+export const sleep = (time = 1000) =>
+  new Promise(r => setTimeout(r, time))
