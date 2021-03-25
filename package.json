@@ -1,6 +1,6 @@
 {
   "name": "btcil",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "command line util to install Bitcoin Israel wallets and miners",
   "main": "src/index.js",
   "bin": {
