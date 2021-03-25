@@ -42,7 +42,7 @@ const propsCache = {}
 export async function getProperties () {
   if (propsCache.value) return propsCache.value
   const dirname = getDirName()
-  const filepath = path.resolve(dirname, '../', 'properties.yaml')
+  const filepath = path.normalize(dirname + '/../').replace(/^\\/g, '') + 'properties.yaml'
   const data = await readFile(filepath, { encoding: 'utf8' })
   if (data && data.length) {
     const parsed = parse(data)
