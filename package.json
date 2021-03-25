@@ -2,17 +2,18 @@
   "name": "btcil",
   "version": "0.0.7",
   "description": "command line util to install Bitcoin Israel wallets and miners",
-  "main": "src/index.mjs",
+  "main": "src/index.js",
   "bin": {
     "btcil": "bin/btcil"
   },
   "scripts": {
-    "start": "node src/index.mjs",
+    "start": "./bin/btcil",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "engines": {
     "node": ">=14"
   },
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bitcoinli/btcil.git"
