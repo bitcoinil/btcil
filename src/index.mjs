@@ -1,26 +1,15 @@
-import prompts from 'prompts'
 import osName from 'os-name'
-import { Command, Option } from 'commander/esm.mjs';
-import { installWallet } from './wizard/osx.mjs';
-import { countRuns } from './utils.mjs';
-import { Listr } from 'listr2';
-import Observable from 'zen-observable';
-import { welcome } from './messages.mjs';
-import logUpdate from 'log-update';
+import { Command, Option } from 'commander/esm.mjs'
+import { countRuns } from './utils.mjs'
+import { Listr } from 'listr2'
+import { welcome } from './messages.mjs'
+import logUpdate from 'log-update'
 import cliSpinners from 'cli-spinners'
-import { prepareInstaller } from './tasks.mjs';
-import { confirmInstallation } from './tasks.mjs';
-import { sleep } from './utils.mjs';
-import chalk from 'chalk';
-import boxen from 'boxen';
-import { errorBox } from './utils.mjs';
-import { getSystemModule } from './platforms/index.mjs';
-import { selectWallet } from './tasks.mjs';
-import { selectMiner } from './tasks.mjs';
-import { processInstall } from './tasks.mjs';
-import { prepareProperties } from './tasks.mjs';
-
-const winInstall = 'https://guides.bitcoinil.org/assets/downloads/binaries/windows/bitcoinil-0.21.0-win64-setup.exe'
+import { errorBox } from './utils.mjs'
+import { getSystemModule } from './platforms/index.mjs'
+import { activities } from './activities/index.mjs'
+import { prepareProperties } from './tasks/system-tasks.mjs'
+import { prepareInstaller } from './activities/install-components.mjs'
 
 const mainTasks = new Listr([
   {
@@ -30,45 +19,22 @@ const mainTasks = new Listr([
       persistentOutput: true
     }
   },
-  
   {
     title: 'Load properties',
-    task: prepareProperties
+    task: prepareProperties,
+    options: {
+      persistentOutput: true
+    }
+  },
+  
+  {
+    title: 'Activities',
+    task: activities,
+    options: {
+      persistentOutput: true
+    }
   },
 
-  {
-    title: 'Install wallet',
-    enabled: ctx => ctx.platform,
-    task: selectWallet,
-    options: {
-      persistentOutput: true
-    }
-  },
-  {
-    title: 'Install miner',
-    enabled: ctx => ctx.platform?.miners,
-    skip: ctx => ctx.options.install && !ctx.options.installMiner,
-    task: selectMiner,
-    options: {
-      persistentOutput: true
-    }
-  },
-  {
-    title: 'Confirm installation',
-    enabled: ctx => ctx.platform,
-    task: confirmInstallation,
-    options: {
-      persistentOutput: true
-    }
-  },
-  {
-    title: 'Install',
-    enabled: ctx => ctx.doInstall,
-    task: processInstall,
-    options: {
-      persistentOutput: true
-    }
-  },
 ],
 { concurrent: false }
 )
@@ -79,7 +45,7 @@ async function initialize () {
   // Load Args
   const os = osName()
   const platform = await getSystemModule(os)
-  await countRuns()
+  const runIndex = await countRuns()
 
   const program = new Command();
 
@@ -95,6 +61,7 @@ async function initialize () {
     .addOption(new Option('-s, --silent', 'Silent (unattended) operation - suppress all output except errors'))
     .addOption(new Option('-o, --ignore-certificate', 'Supress certificate mismatch errors'))
     .addOption(new Option('-is, --ignore-signatures', 'Supress file signature errors'))
+    .addOption(new Option('-sd, --skip-downloads', 'Avoid re-downloading assets'))
     .parse();
   
   const options = program.opts();
@@ -119,7 +86,7 @@ async function initialize () {
   logUpdate.done()
   
   try {
-    const res = await mainTasks.run({ options })
+    const res = await mainTasks.run({ options, runIndex })
     if (!res.platform) console.error(errorBox(1002, `Platform not supported`))
   } catch (error) {
     if (error.toString() !== 'Error: Aborted')

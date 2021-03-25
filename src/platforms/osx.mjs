@@ -1,16 +1,12 @@
 import chalk from 'chalk'
 import path from 'path'
 import Observable from 'zen-observable'
-import { prepareTempDir } from '../tasks.mjs'
 import { downloadFile } from '../utils.mjs'
 import { sleep } from '../utils.mjs'
-import cliProgress from 'cli-progress'
-import cliSpinners from 'cli-spinners'
-import stream from 'stream'
 import fs, { constants } from 'fs'
-import { getDirName } from '../utils.mjs'
 import { makeFileIntegrityCheck } from '../tasks.mjs'
 import { configureJSONRPC } from '../tasks.mjs'
+import { prepareTempDir } from '../tasks/system-tasks.mjs'
 
 const { access, unlink } = fs.promises
 
@@ -58,7 +54,7 @@ export const wallets = [
         {
           // title: 'Check existing temp file',
           skip: () => !ctx._destinationExists,
-          enabled: () => false, // DEBUG ONLY
+          enabled: () => ctx.skipDownloads, // DEBUG ONLY
           task: async (_, subTask) => {
             await unlink(ctx._downloadFullpath)
             ctx._destinationExists = false
@@ -79,11 +75,10 @@ export const wallets = [
             }
             
 
-            await subTask.prompt({ type: 'confirm', message: 'Confirm file download' })
-            && await downloadFile(ctx._downloadUrl, ctx._walletTempDir, ctx._walletBasename, {
+            // ! Prompt download confirm - useful for debugging
+            // await subTask.prompt({ type: 'confirm', message: 'Confirm file download' }) && 
+            await downloadFile(ctx._downloadUrl, ctx._walletTempDir, ctx._walletBasename, {
               onResponse: (response) => {
-                // console.log('content size: ' + response.headers['content-length'])
-                // bar1.start(Math.floor((response.headers['content-length'] / 1024 / 1024) * 100) / 100)
                 ctx.stats = { total: response.headers['content-length'], size: Math.floor((response.headers['content-length'] / 1024 / 1024) * 100) / 100 }
                 subTask.output = spinner.frames[0] + ' ' + 'Size: ' + ctx.stats.total
               },
@@ -99,20 +94,6 @@ export const wallets = [
                 }
               },
             })
-
-            await sleep(14000)
-  
-
-            // // https://guides.bitcoinil.org/assets/downloads/binaries/osx/BitcoinIL-Qt.dmg
-            // // subTask.output = 'basename ' + ctx._walletBasename
-            // // subTask.output = 'ctx._walletTempDir ' + ctx._walletTempDir
-            // // subTask.output = 'ctx._downloadUrl ' + ctx._downloadUrl
-            // // await sleep(3003)
-            // // subTask.output = 'prep prerp' + ctx.tempDir
-            // // await sleep(3003)
-            // // subTask.output = 'prop proorp'
-            // // await sleep(3003)
-            
           },
           options: {
             // bottomBar: Infinity
@@ -144,7 +125,7 @@ export const wallets = [
           }
         },
         {
-          title: chalk`Create {cyan bitcoinil.conf} file`,
+          title: chalk`Prepare {cyan bitcoinil.conf} file`,
           task: async (_, subTask) => {
             const { get, set } = await import('../bitcoinil-conf.mjs')
             const isTestnet = +(await get('testnet')) === 1
@@ -161,14 +142,6 @@ export const wallets = [
             if (useTestnet !== isTestnet) {
               await set('testnet', +useTestnet)
             }
-
-            // subTask.output = ' USE TESTNET: ' + useTestnet
-            // subTask.output = ' USE SEL: ' + JSON.stringify(ctx.options, 1, 1) + JSON.stringify(ctx.selections, 1, 1)
-
-            // await set('talisawesome', true)
-            // subTask.output = ' IS talisawesome: ' + (await get('talisawesome'))
-
-            // await sleep(14000000)
           },
           options: {
             // bottomBar: Infinity
@@ -180,14 +153,26 @@ export const wallets = [
           task: configureJSONRPC
         },
         {
+          title: 'Launch wallet',
+          skip: () => ctx.options.confirm,
+          task: async (_, subTask) => {
+            ctx.confirmLaunchWallet = await subTask.prompt({
+              type: 'confirm',
+              message: 'Launch BitcoinIL Core wallet now?',
+              initial: true
+            })
+          }
+        },
+        {
           title: 'Run wallet',
+          skip: () => !ctx.confirmLaunchWallet,
           task: async (_, subTask) => {
             const { exec } = await import('child_process')
             const cmd = `open /Applications/BitcoinIL-Qt.app`
-            const verified = await new Promise(r => exec(cmd, (err, stdout, stderr) => {
+            subTask.output = 'Running wallet...'
+            await new Promise(r => exec(cmd, (err, stdout, stderr) => {
               r(stdout)
             }))
-            subTask.output = 'Running wallet...'
           }
         }
       ]),

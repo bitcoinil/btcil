@@ -13,7 +13,7 @@ const cacheConf = {
 
 export const get = async (key) => {
   if (!cacheConf.loaded) await loadConfData()
-  return cacheConf.data[key]
+  return key ? cacheConf.data[key] : cacheConf.data
 }
 
 export const set = async (key, value) => {

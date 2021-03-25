@@ -61,6 +61,7 @@ export function getDirName () {
 export async function countRuns () {
   const runs = +(await getItem('runs')) || 0
   await setItem('runs', runs + 1)
+  return runs + 1
 }
 
 export async function downloadFile (url, directory, fileName, options = {}) {
@@ -109,7 +110,7 @@ export async function downloadSignature (sigPath) {
   const savePath = path.resolve(tempPath, sigPath, '../')
   const saveFile = sigPath.split('/').pop() + '.sig'
   const filepath = path.resolve(savePath, saveFile)
-  
+
   const file = await downloadFile(sigUrl, savePath, saveFile)
 
   const signature = await readFile(path.resolve(savePath, saveFile), { encoding: 'utf8' })
