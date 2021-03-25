@@ -4,7 +4,7 @@
   "description": "command line util to install Bitcoin Israel wallets and miners",
   "main": "src/index.mjs",
   "bin": {
-    "btcil": "src/index.mjs"
+    "btcil": "node src/index.mjs"
   },
   "scripts": {
     "start": "node src/index.mjs",
