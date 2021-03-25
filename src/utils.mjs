@@ -2,7 +2,7 @@ import tmp from 'tmp'
 import { readFile, unlink } from 'fs/promises'
 import fs from 'fs'
 import { parse } from 'yaml'
-import path, { dirname } from 'path'
+import path from 'path'
 import { setItem, getItem, removeItem } from './local-storage.mjs'
 import Downloader from 'nodejs-file-downloader'
 import boxen from 'boxen'
@@ -68,12 +68,7 @@ export async function downloadFile (url, directory, fileName, options = {}) {
   const downloader = new Downloader({
     ...fileName ? { fileName } : {},
     url,
-    directory,//Sub directories will also be automatically created if they do not exist.  
-    // onProgress:function(percentage,chunk,remainingSize){//Gets called with each chunk.
-    //      console.log('% ',percentage)   
-    //      console.log('Current chunk of data: ',chunk)   
-    //      console.log('Remaining bytes: ',remainingSize)   
-    // },
+    directory, //Sub directories will also be automatically created if they do not exist.  
     ...options
   })    
   
@@ -111,7 +106,7 @@ export async function downloadSignature (sigPath) {
   const saveFile = sigPath.split('/').pop() + '.sig'
   const filepath = path.resolve(savePath, saveFile)
 
-  const file = await downloadFile(sigUrl, savePath, saveFile)
+  await downloadFile(sigUrl, savePath, saveFile)
 
   const signature = await readFile(path.resolve(savePath, saveFile), { encoding: 'utf8' })
   return {
@@ -123,14 +118,12 @@ export async function downloadSignature (sigPath) {
 export async function compareCertificates (certificate) {
   const dirname = getDirName()
   const local = await readFile(path.resolve(dirname, '../', 'certificate.pem'), { encoding: 'utf8' })
-  console.log('local file', local)
 
   return local.trim() === certificate.trim()
 }
 
 export function getPackageJson () {
   const pathname = path.normalize(getDirName() + '/../').replace(/^\\/g, '')
-  console.log('pathname:', pathname)
   const data = fs.readFileSync(pathname + 'package.json')
   const parsed = JSON.parse(data)
   return parsed

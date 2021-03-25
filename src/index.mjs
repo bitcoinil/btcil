@@ -66,7 +66,7 @@ async function initialize () {
   
   const options = program.opts();
 
-  console.log('What are options:', options)
+  // console.log('What are options:', options)
 
   if (options.doLongWork) {
     let frameNumber = 0

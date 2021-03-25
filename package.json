@@ -2,7 +2,10 @@
   "name": "btcil",
   "version": "0.0.1",
   "description": "command line util to install Bitcoin Israel wallets and miners",
-  "main": "index.js",
+  "main": "src/index.mjs",
+  "bin": {
+    "btcil": "./src/index.mjs"
+  },
   "scripts": {
     "start": "node src/index.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
