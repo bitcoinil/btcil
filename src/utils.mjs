@@ -77,6 +77,7 @@ export async function downloadFile (url, directory, fileName, options = {}) {
     return true
   } catch (error) {
     console.log(error)
+    throw error
   }
 }
 

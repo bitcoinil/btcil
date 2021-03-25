@@ -7,12 +7,9 @@ import fs, { constants } from 'fs'
 import { makeFileIntegrityCheck } from '../tasks.mjs'
 import { configureJSONRPC } from '../tasks.mjs'
 import { prepareTempDir } from '../tasks/system-tasks.mjs'
+import { downloadFileTask } from '../tasks.mjs'
 
 const { access, unlink } = fs.promises
-
-export const getWallet = () => {
-  
-}
 
 export const platform = 'osx'
 
@@ -41,20 +38,23 @@ export const wallets = [
           }
         },
         { 
-          task: async () => Object.assign(ctx, {
-            _walletBasename: path.basename(ctx._downloadUrl),
-          })
-          && Object.assign(ctx, {
-            _downloadFullpath: ctx._walletTempDir + '/' + ctx._walletBasename,
-          })
-          && Object.assign(ctx, {
-            _destinationExists: await (access(ctx._downloadFullpath, constants.F_OK).then(() => true).catch(() => false))
-          })
+          // title: 'Define wallet files in context',
+          task: async () => {
+            Object.assign(ctx, {
+              _walletBasename: path.basename(ctx._downloadUrl),
+            })
+            Object.assign(ctx, {
+              _downloadFullpath: ctx._walletTempDir + '/' + ctx._walletBasename,
+            })
+            Object.assign(ctx, {
+              _destinationExists: await (access(ctx._downloadFullpath, constants.F_OK).then(() => true).catch(() => false))
+            })
+          }
         },
         {
           // title: 'Check existing temp file',
           skip: () => !ctx._destinationExists,
-          enabled: () => ctx.skipDownloads, // DEBUG ONLY
+          enabled: () => !ctx.options.skipDownloads, // DEBUG ONLY
           task: async (_, subTask) => {
             await unlink(ctx._downloadFullpath)
             ctx._destinationExists = false
@@ -62,40 +62,14 @@ export const wallets = [
         },
         {
           title: 'Download file',
-          skip: () => ctx._destinationExists,
-          task: async (_ctx, subTask) => {
-            const makeSpinner = (width = 8) =>
-              [
-                ...[...(Array(width))]
-                  .map((_, i) => ([...Array(i)].map(() => '▰')).join('') + ([...Array(width - i)].map(() => '▱')).join('') ),
-                ([...Array(width)].map(() => '▰')).join('')
-              ]
-            const spinner = {
-              frames: makeSpinner(7)
-            }
-            
-
-            // ! Prompt download confirm - useful for debugging
-            // await subTask.prompt({ type: 'confirm', message: 'Confirm file download' }) && 
-            await downloadFile(ctx._downloadUrl, ctx._walletTempDir, ctx._walletBasename, {
-              onResponse: (response) => {
-                ctx.stats = { total: response.headers['content-length'], size: Math.floor((response.headers['content-length'] / 1024 / 1024) * 100) / 100 }
-                subTask.output = spinner.frames[0] + ' ' + 'Size: ' + ctx.stats.total
-              },
-              onProgress: (percentage, chunk, remainingSize) => {
-                const per = parseFloat(percentage)
-                const frameNum = Math.ceil((spinner.frames.length - 1) * (per / 100))
-                const frame = spinner.frames[frameNum]
-                const totalDownload = Math.floor(((ctx.stats.total - remainingSize) / 1024 / 1024) * 100) / 100
-                subTask.output = chalk`${ctx._walletBasename} ${frame} ${percentage}% {dim [${totalDownload}/${ctx.stats.size}mb]}`
-
-                if (per >= 100) {
-                  subTask.output = 'Download complete.'
-                }
-              },
-            })
-          },
+          skip: () => ctx._destinationExists ? 'File exists - download skipped' : false,
+          task: downloadFileTask,
+          // task: async (_, subTask) => {
+          //   subTask.output = 'This will download ' + ctx._destinationExists
+          //   await sleep(14000000)
+          // },
           options: {
+            persistentOutput: true
             // bottomBar: Infinity
           }
         },

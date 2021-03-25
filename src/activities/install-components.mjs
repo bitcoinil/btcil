@@ -4,6 +4,7 @@ import chalk from 'chalk'
 import { getSystemModule } from '../platforms/index.mjs'
 import { installWallet, buildWallet, selectWallet } from './wallets.mjs'
 import { buildMiner, installMiner, selectMiner } from './miners.mjs'
+import { sleep } from '../utils.mjs'
 
 export const installComponents = (_, subSubTask) =>
   subSubTask.newListr([
@@ -57,15 +58,39 @@ export const prepareInstaller = async (ctx, task) =>
   task.newListr(parent =>
     [
       {
+        // title: 'Load persisted data',
+        task: async (_, subTask) => {
+          const { getItem } = await import('../local-storage.mjs')
+          try {
+            const data = JSON.parse(await getItem('host-data'))
+  
+            // subTask.output = 'We got data? ' + data.time
+            // await sleep(4000000)
+            if (data?.time) {
+              const diff = Date.now() - data.time
+              if (diff < (60 * 60 * 24 * 1000)) {
+                Object.assign(ctx, {
+                  os: data.os,
+                  cpu: data.cpu,
+                  graphics: data.graphics,
+                  _skipIdent: true
+                })
+              }
+            }
+          } catch (err) {}
+        }
+      },
+      {
         title: 'Identify Operating System',
+        enabled: () => !ctx._skipIdent,
         task: async (_ctx, subTask) => Object.assign(ctx, {
           os: osName(),
-          cpu: await si.cpu(),
-          graphics: (await si.graphics())?.controllers
+          _persistData: true
         }) && (subTask.title = chalk`OS: {green ${ctx.os}}`)
       },
       {
         title: 'Identify CPU Make and Model',
+        enabled: () => !ctx._skipIdent,
         task: async (_ctx, subTask) => Object.assign(ctx, {
           cpu: await si.cpu(),
         })
@@ -74,11 +99,28 @@ export const prepareInstaller = async (ctx, task) =>
       },
       {
         title: 'Identify GPUs Make and Model',
+        enabled: () => !ctx._skipIdent,
         task: async (_ctx, subTask) => Object.assign(ctx, {
           graphics: (await si.graphics())?.controllers,
         }) 
         && Object.assign(ctx, { _gpuString: ctx.graphics.reduce((acc, gpu) => [...acc, `${gpu.vendor} - ${gpu.model} (${Math.floor((gpu.vram / 1024) * 100) / 100}gb)`], []).join(', ') })
         && (subTask.title = chalk`GPU${ctx.graphics.length > 1 ? 's' :''}: {green ${ctx._gpuString}}`)
+      },
+      {
+        title: 'Persist data to local storage',
+        enabled: () => ctx._persistData,
+        task: async (_ctx, subTask) => {
+          const { setItem } = await import('../local-storage.mjs')
+          await setItem('host-data', JSON.stringify({
+            os: ctx.os,
+            cpu: ctx.cpu,
+            graphics: ctx.gaphics,
+            time: Date.now()
+          }, 1, 1))
+          // subTask.output = 'done'
+
+          // await sleep(40000000)
+        }
       },
       {
         title: 'Find Supported Modules',
@@ -87,7 +129,6 @@ export const prepareInstaller = async (ctx, task) =>
 
           ctx.platform = await getSystemModule(ctx.os)
           if (!ctx.platform) throw new Error('Platform not supported :(')
-          subTask.output = 'System module loaded: ' + !!ctx.platform
         }
       },
       {

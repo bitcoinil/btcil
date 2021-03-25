@@ -62,11 +62,12 @@ async function initialize () {
     .addOption(new Option('-o, --ignore-certificate', 'Supress certificate mismatch errors'))
     .addOption(new Option('-is, --ignore-signatures', 'Supress file signature errors'))
     .addOption(new Option('-sd, --skip-downloads', 'Avoid re-downloading assets'))
+    .addOption(new Option('-d, --debug', 'Debug'))
     .parse();
   
   const options = program.opts();
 
-  // console.log('What are options:', options)
+  options.debug && console.log('What are options:', options)
 
   if (options.doLongWork) {
     let frameNumber = 0
