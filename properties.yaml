@@ -4,3 +4,4 @@ binaries:
   windows: https://guides.bitcoinil.org/assets/downloads/binaries/windows/bitcoinil-0.21.0-win64-setup.exe
 confpath:
   osx: "{homedir}/Library/Application Support/BitcoinIL/bitcoinil.conf"
+  windows: "{homedir}/AppData/Roaming/BitcoinIL/bitcoinil.conf"

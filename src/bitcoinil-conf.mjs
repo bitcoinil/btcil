@@ -34,12 +34,17 @@ export const loadConfData = async () => {
   const replacers = {
     '{homedir}': homedir
   }
+
   const filePath = properties.confpath[platform.platform].replace(Object.keys(replacers), Object.values(replacers))
 
-  const fileData = await readFile(filePath, { encoding: 'utf8' })
-  const parsed = ini.parse(fileData)
-  Object.assign(cacheConf, { data: parsed, loaded: true })
-  return parsed
+  try {
+    const fileData = await readFile(filePath, { encoding: 'utf8' })
+    const parsed = ini.parse(fileData)
+    Object.assign(cacheConf, { data: parsed, loaded: true })
+    return parsed
+  } catch (err) {
+    return {}
+  }
 }
 
 export const saveConfData = async (data) => {
@@ -52,5 +57,9 @@ export const saveConfData = async (data) => {
   }
   const filePath = properties.confpath[platform.platform].replace(Object.keys(replacers), Object.values(replacers))
 
-  await writeFile(filePath, ini.stringify(data))
+  try {
+    await writeFile(filePath, ini.stringify(data))
+  } catch (err) {
+    throw new Error('Cannot write BitcoinIL.conf ' + err)
+  }
 }

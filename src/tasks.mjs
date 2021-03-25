@@ -99,10 +99,11 @@ export const configureJSONRPC = async (ctx, task) => {
       }))
   
     await set(state => ({
+      server: 1,
       rpcallowip: '127.0.0.1',
       rpcuser: 'bitcoinil',
       rpcpassword,
-      ...(+state.testnet !== 1 ? { port: 8332 } : {}),
+      ...((+state.testnet !== 1) && !(ctx.options.testnet) ? { port: 8332 } : {}),
     }))
   }
 }

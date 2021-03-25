@@ -64,10 +64,6 @@ export const wallets = [
           title: 'Download file',
           skip: () => ctx._destinationExists ? 'File exists - download skipped' : false,
           task: downloadFileTask,
-          // task: async (_, subTask) => {
-          //   subTask.output = 'This will download ' + ctx._destinationExists
-          //   await sleep(14000000)
-          // },
           options: {
             persistentOutput: true
             // bottomBar: Infinity
@@ -79,7 +75,6 @@ export const wallets = [
         },
         {
           title: 'Run installer',
-          skip: () => true,
           task: async (_, subTask) => {
             subTask.output = 'running installer...'
 

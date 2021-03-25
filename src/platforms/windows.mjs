@@ -6,12 +6,10 @@ import { prepareTempDir } from '../tasks/system-tasks.mjs'
 import { sleep } from '../utils.mjs'
 import { downloadFileTask } from '../tasks.mjs'
 import { makeFileIntegrityCheck } from '../tasks.mjs'
+import { configureJSONRPC } from '../tasks.mjs'
 
 const { access, unlink } = fs.promises
-
-export const getWallet = () => {
-
-}
+export const platform = 'windows'
 export const wallets = [
   {
     name: 'core',
@@ -73,26 +71,69 @@ export const wallets = [
   
               const { exec } = await import('child_process')
               const cmd = `${ctx._downloadFullpath}`
+              subTask.output = 'Follow the setup instructions...'
               await new Promise(r => exec(cmd, (err, stdout, stderr) => {
                 r()
               }))
-              await subTask.prompt({
-                type: 'confirm',
-                initial: true,
-                message: 'Follow the setup instructions and click [Enter] to continue...'
-              })
+              // await subTask.prompt({
+              //   type: 'confirm',
+              //   initial: true,
+              //   message: 'Follow the setup instructions and click [Enter] to continue...'
+              // })
             },
             options: {
               // bottomBar: Infinity
             }
           },
           {
-            title: 'working',
+            title: 'Configure JSON-RPC',
+            skip: () => !ctx.selections.miner && !ctx.options.jsonRpc,
+            task: configureJSONRPC
+          },
+          {
+            title: 'Launch wallet',
+            // skip: () => ctx.options.confirm,
             task: async (_, subTask) => {
-              subTask.output = 'Fullpath: ' + ctx._downloadFullpath
-              await subTask.prompt({ type: 'confirm', message: 'proceed' })
+              ctx.confirmLaunchWallet = await subTask.prompt({
+                type: 'confirm',
+                message: 'Launch BitcoinIL Core wallet now?',
+                initial: true
+              })
             }
-          }
+          },
+          {
+            title: 'Run wallet',
+            skip: () => !ctx.confirmLaunchWallet,
+            task: async (_, subTask) => {
+              const { spawn } = await import('child_process')
+
+              const useTestnet = ctx.options.testnet
+              // || await subTask.prompt({
+              //   type: 'Toggle',
+              //   message: 'Run Testnet Wallet',
+              //   enabled: 'Yes',
+              //   disabled: 'No',
+              //   initial: true
+              // })
+              const cmd = `C:\\Program Files\\BitcoinIL\\bitcoinil-qt.exe`
+              subTask.output = 'Running wallet...'
+              const child = spawn(cmd, [useTestnet ? '-testnet' : ''], {
+                detached: true,
+                stdio: 'ignore'
+              })
+              child.unref()
+            },
+            options: {
+              // bottomBar: Infinity
+            }
+          },
+          // {
+          //   title: 'working',
+          //   task: async (_, subTask) => {
+          //     subTask.output = 'Fullpath: ' + ctx._downloadFullpath
+          //     await subTask.prompt({ type: 'confirm', message: 'proceed' })
+          //   }
+          // }
         ]),
     // build: () => new Observable(async observer => {
     //   observer.next('Building BitcoinIL Core!!!')

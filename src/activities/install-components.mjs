@@ -73,6 +73,8 @@ export const prepareInstaller = async (ctx, task) =>
                   os: data.os,
                   cpu: data.cpu,
                   graphics: data.graphics,
+                  _cpuString: data._cpuString,
+                  _gpuString: data._gpuString,
                   _skipIdent: true
                 })
               }
@@ -115,6 +117,8 @@ export const prepareInstaller = async (ctx, task) =>
             os: ctx.os,
             cpu: ctx.cpu,
             graphics: ctx.gaphics,
+            _cpuString: ctx._cpuString,
+            _gpuString: ctx._gpuString,
             time: Date.now()
           }, 1, 1))
           // subTask.output = 'done'

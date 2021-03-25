@@ -62,6 +62,7 @@ async function initialize () {
     .addOption(new Option('-o, --ignore-certificate', 'Supress certificate mismatch errors'))
     .addOption(new Option('-is, --ignore-signatures', 'Supress file signature errors'))
     .addOption(new Option('-sd, --skip-downloads', 'Avoid re-downloading assets'))
+    .addOption(new Option('-j, --json-rpc', 'Configure JSON-RPC'))
     .addOption(new Option('-d, --debug', 'Debug'))
     .parse();
   
