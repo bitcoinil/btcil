@@ -52,6 +52,8 @@ async function initialize () {
   let _l
   
   program
+    .command('btcil')
+    .description('Run the BTCIL Automated Wizard')
     .addOption(new Option('-i, --install [wallet]', 'Install BitcoinIL wallet').choices(platform.wallets.map(({name}) => name)))
     .addOption(new Option('-b, --build', 'Build wallet from source' + `${(_l = platform.wallets.filter(({build}) => build)) && _l.length ? ` (supported wallets: ${_l.map(({name}) => name).join(', ')})` : ' (not supported)'}`))
     .addOption(new Option('-m, --install-miner [type]', 'Install BitcoinIL Compatible Miner'))
@@ -63,7 +65,7 @@ async function initialize () {
     .addOption(new Option('-is, --ignore-signatures', 'Supress file signature errors'))
     .addOption(new Option('-sd, --skip-downloads', 'Avoid re-downloading assets'))
     .addOption(new Option('-j, --json-rpc', 'Configure JSON-RPC'))
-    .addOption(new Option('-d, --debug', 'Debug'))
+    .addOption(new Option('-d, --debug', 'Debug').hideHelp())
     .parse();
   
   const options = program.opts();
