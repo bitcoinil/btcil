@@ -3,7 +3,18 @@ import chalk from "chalk"
 export const selectMiner = async (ctx, task) => 
   task.newListr(parent => 
     [
-
+      {
+        enabled: () => false,
+        title: 'opts',
+        options: { bottomBar: Infinity },
+        task: async (_, subTask) => {
+          subTask.output = 'ctx.options: \n' + JSON.stringify(ctx.options)
+          await subTask.prompt({
+            type: 'confirm',
+            message: 'continue...'
+          })
+        },
+      },
       {
         task: 'Confirm Miner',
         skip: () => ctx.options.installMiner,
@@ -90,24 +101,21 @@ export const selectMiner = async (ctx, task) =>
   )
 
 export const installMiner = (ctx, task) =>
-  task.newListr(parent => [
-    {
-      title: 'Download miner binaries',
-      task: async () => {
-        // await sleep(3000)
-      }
+task.newListr(parent => [
+  {
+    title: 'Installing miner...',
+    task: ctx.platform.miners.find(({name}) => name === ctx.selections.miner).download
+  },
+  {
+    task: (_ctx, subTask) => {
+      parent.output = 'Miner installed successfully'
     },
-    {
-      task: (_ctx, subTask) => {
-        parent.output = '[parent] Miner installed successfully'
-      },
-      options: {
-        persistentOutput: true
-
-      }
-
+    options: {
+      persistentOutput: true
     }
-  ])
+  }
+])
+
 
 export const buildMiner = async (ctx, task) =>
   task.newListr(parent => [

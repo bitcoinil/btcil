@@ -6,6 +6,19 @@ export const activities = (ctx, subTask) =>
       task: () => parent.title = 'Processing...'
     },
     {
+      // title: 'Con',
+      enabled: () => false,
+      task: async (_, st) => {
+        st.output = JSON.stringify(ctx.options)
+        await st.prompt({
+          type: 'confirm'
+        })
+      },
+      options: {
+        bottomBar: Infinity
+      }
+    },
+    {
       title: 'Select activity',
       enabled: () => !ctx.options.install && !ctx.options.installMiner,
       task: selectActivity

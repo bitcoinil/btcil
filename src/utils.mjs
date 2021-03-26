@@ -20,21 +20,21 @@ export async function cleanupTempDir() {
 
   tempCache.dir = null
 }
-export async function getTempDir () {
+export async function getTempDir (createDir = true) {
   const existingTempDir = await getItem('temp-dir')
   if (existingTempDir) tempCache.dir = existingTempDir
-  const promise = new Promise((resolve) => {
-    if (tempCache.dir) return resolve(tempCache.dir)
-    tmp.dir(async function _tempDirCreated(err, path, cleanupCallback) {
-      if (err) throw err;
-    
-      tempCache.dir = path
-      tempCache.cleanupCallback = cleanupCallback
-      await setItem('temp-dir', path)
-      resolve(path)
-    });
-  })
-  return promise
+  if (createDir)
+    return new Promise((resolve) => {
+      if (tempCache.dir) return resolve(tempCache.dir)
+      tmp.dir(async function _tempDirCreated(err, path, cleanupCallback) {
+        if (err) throw err;
+      
+        tempCache.dir = path
+        tempCache.cleanupCallback = cleanupCallback
+        await setItem('temp-dir', path)
+        resolve(path)
+      });
+    })
 }
 
 const propsCache = {}
@@ -147,3 +147,4 @@ export function readableBytes(bytes) {
 
   return (bytes / Math.pow(1024, i)).toFixed(2) * 1 + ' ' + sizes[i];
 }
+

@@ -27,7 +27,7 @@ task.newListr(parent =>
     },
     {
       title: 'Mainnet launching on April 1st',
-      skip: () => ctx.options.testnet || ctx.options.confirm || (Date.now() > LAUNCH),
+      skip: () => !ctx.selections?.installWallet || ctx.options.testnet || ctx.options.confirm || (Date.now() > LAUNCH),
       enabled: () => (Date.now() < LAUNCH),
       task: async (_, subTask) => {
         ctx.options.testnet = await subTask.prompt({
@@ -114,9 +114,7 @@ export const installWallet = (ctx, task) =>
       },
       options: {
         persistentOutput: true
-
       }
-
     }
   ])
 

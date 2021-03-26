@@ -140,3 +140,43 @@ export const downloadFileTask = async (ctx, task) => {
     },
   })
 }
+
+export const makeDownloadFileTask = ({
+  downloadUrl,
+  directory,
+  saveFilename
+}) => async (ctx, task) => {
+  const path = await import('path')
+  saveFilename = saveFilename || path.basename(downloadUrl)
+
+  const makeSpinner = (width = 8) =>
+    [
+      ...[...(Array(width))]
+        .map((_, i) => ([...Array(i)].map(() => '▰')).join('') + ([...Array(width - i)].map(() => '▱')).join('') ),
+      ([...Array(width)].map(() => '▰')).join('')
+    ]
+  const spinner = {
+    frames: makeSpinner(7)
+  }
+  
+
+  // ! Prompt download confirm - useful for debugging
+  // await task.prompt({ type: 'confirm', message: 'Confirm file download' }) && 
+  await downloadFile(downloadUrl, directory, saveFilename, {
+    onResponse: (response) => {
+      ctx.stats = { total: response.headers['content-length'], size: Math.floor((response.headers['content-length'] / 1024 / 1024) * 100) / 100 }
+      task.output = spinner.frames[0] + ' ' + 'Size: ' + ctx.stats.total
+    },
+    onProgress: (percentage, chunk, remainingSize) => {
+      const per = parseFloat(percentage)
+      const frameNum = Math.ceil((spinner.frames.length - 1) * (per / 100))
+      const frame = spinner.frames[frameNum]
+      const totalDownload = Math.floor(((ctx.stats.total - remainingSize) / 1024 / 1024) * 100) / 100
+      task.output = chalk`${ctx._walletBasename} ${frame} ${percentage}% {dim [${totalDownload}/${ctx.stats.size}mb]}`
+
+      if (per >= 100) {
+        task.output = 'Download complete.'
+      }
+    },
+  })
+}

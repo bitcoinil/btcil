@@ -7,6 +7,7 @@ import { sleep } from '../utils.mjs'
 import { downloadFileTask } from '../tasks.mjs'
 import { makeFileIntegrityCheck } from '../tasks.mjs'
 import { configureJSONRPC } from '../tasks.mjs'
+import { makeDownloadFileTask } from '../tasks.mjs'
 
 const { access, unlink } = fs.promises
 export const platform = 'windows'
@@ -141,4 +142,62 @@ export const wallets = [
     //   observer.complete()
     // })
   },
+]
+
+export const miners = [
+  {
+    title: 'CPUMiner-OPT',
+    name: 'cpuminer-opt',
+    download: (ctx, task) =>
+      task.newListr(parent => [
+        {
+          title: 'Prepare temporary directory',
+          enabled: ctx => !ctx.tempDir,
+          task: prepareTempDir
+        },
+        { task: () => ctx._minerTempDir = ctx.tempDir + '/miner-install' },
+        {
+          title: 'Configure download file',
+          task: async (_, subTask) => {
+            const downloadUrl = ctx.properties.miners['cpuminer-opt']
+            ctx._downloadUrl = downloadUrl
+            subTask.output = chalk`File URL: {dim {cyan ${downloadUrl}}}`
+          },
+          options: {
+            persistentOutput: true
+          }
+        },
+        { 
+          // title: 'Define wallet files in context',
+          task: async () => Object.assign(ctx, {
+            _minerBasename: path.basename(ctx._downloadUrl),
+          })
+          && Object.assign(ctx, {
+            _downloadFullpath: ctx._minerTempDir + '/' + ctx._minerBasename,
+          })
+          && Object.assign(ctx, {
+            _destinationExists: await (access(ctx._downloadFullpath, constants.F_OK).then(() => true).catch(() => false))
+          })
+        },
+        {
+          // title: 'Check existing temp file',
+          skip: () => !ctx._destinationExists,
+          enabled: () => !ctx.options.skipDownloads, // DEBUG ONLY
+          task: async (_, subTask) => {
+            await unlink(ctx._downloadFullpath)
+            ctx._destinationExists = false
+          }
+        },
+        {
+          title: 'Download file',
+          skip: () => ctx._destinationExists ? 'File exists - download skipped' : false,
+          task: (_, subTask) => makeDownloadFileTask({
+                                  downloadUrl: ctx._downloadUrl,
+                                  directory: ctx._minerTempDir,
+                                  saveFilename: ctx._minerBasename
+                                })(_, subTask)
+        },
+      ])
+    // }
+  }
 ]

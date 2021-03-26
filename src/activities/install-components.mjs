@@ -11,6 +11,7 @@ export const installComponents = (_, subSubTask) =>
     {
       title: 'Select wallet',
       enabled: ctx => ctx.platform?.wallets?.length,
+      skip: ctx => !ctx.options.install && ctx.options.installMiner,
       task: selectWallet,
       options: {
         persistentOutput: true
@@ -59,6 +60,7 @@ export const prepareInstaller = async (ctx, task) =>
     [
       {
         // title: 'Load persisted data',
+        enabled: () => !ctx.options.mock,
         task: async (_, subTask) => {
           const { getItem } = await import('../local-storage.mjs')
           try {
@@ -85,10 +87,23 @@ export const prepareInstaller = async (ctx, task) =>
       {
         title: 'Identify Operating System',
         enabled: () => !ctx._skipIdent,
+        skip: () => !!ctx.options.mock,
         task: async (_ctx, subTask) => Object.assign(ctx, {
           os: osName(),
           _persistData: true
         }) && (subTask.title = chalk`OS: {green ${ctx.os}}`)
+      },
+      {
+        title: 'Mock Operating System',
+        enabled: () => !!ctx.options.mock,
+        task: async (_, subTask) => {
+          const { setItem } = await import('../local-storage.mjs')
+          Object.assign(ctx, {
+            os: ctx.options.mock + ' [MOCK]',
+          })
+          subTask.title = chalk`OS: {green ${ctx.os}}`
+          await setItem('host-data', JSON.stringify({}))
+        }
       },
       {
         title: 'Identify CPU Make and Model',
@@ -110,7 +125,7 @@ export const prepareInstaller = async (ctx, task) =>
       },
       {
         title: 'Persist data to local storage',
-        enabled: () => ctx._persistData,
+        enabled: () => ctx._persistData && !ctx.options.mock,
         task: async (_ctx, subTask) => {
           const { setItem } = await import('../local-storage.mjs')
           await setItem('host-data', JSON.stringify({
@@ -141,7 +156,7 @@ export const prepareInstaller = async (ctx, task) =>
         task: () => parent.title = chalk`System Ready: {bgGreen ${ctx.os}} {bgMagenta ${ctx._cpuString}} {bgBlue ${ctx._gpuString}}`
       }
     ],
-    { concurrent: false, rendererOptions: { collapse: true, collapseErrors: true }, exitOnError: false }
+    { concurrent: false, rendererOptions: { collapse: true, collapseErrors: true }, exitOnError: true }
   )
 
 export const confirmInstallation = async (ctx, task) => {

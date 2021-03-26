@@ -5,3 +5,5 @@ binaries:
 confpath:
   osx: "{homedir}/Library/Application Support/BitcoinIL/bitcoinil.conf"
   windows: "{homedir}/AppData/Roaming/BitcoinIL/bitcoinil.conf"
+miners:
+  cpuminer-opt: https://github.com/JayDDee/cpuminer-opt/releases/download/v3.16.1/cpuminer-opt-3.16.1-windows.zip

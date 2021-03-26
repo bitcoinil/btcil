@@ -11,6 +11,7 @@ import { activities } from './activities/index.mjs'
 import { prepareProperties } from './tasks/system-tasks.mjs'
 import { prepareInstaller } from './activities/install-components.mjs'
 import { getPackageJson } from './utils.mjs'
+import * as cli from './cli.mjs'
 
 const mainTasks = new Listr([
   {
@@ -68,11 +69,13 @@ async function initialize () {
     .addOption(new Option('-sd, --skip-downloads', 'Avoid re-downloading assets'))
     .addOption(new Option('-j, --json-rpc', 'Configure JSON-RPC'))
     .addOption(new Option('-d, --debug', 'Debug').hideHelp())
-    .addOption(new Option('-m, --mock <target>', 'Mock target platform (ignore host platform identification)').hideHelp())
-    .parse()
+    .addOption(new Option('-x, --mock <target>', 'Mock target platform (ignore host platform identification)').hideHelp())
+  
+    
+  cli.init(program)
+  program.parse()
   
   const options = program.opts();
-  
   options.debug && console.log('What are options:', options)
   
   if (options.doLongWork) {
