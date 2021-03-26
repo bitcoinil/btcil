@@ -10,7 +10,7 @@ export const installComponents = (_, subSubTask) =>
   subSubTask.newListr([
     {
       title: 'Select wallet',
-      enabled: ctx => ctx.platform,
+      enabled: ctx => ctx.platform?.wallets?.length,
       task: selectWallet,
       options: {
         persistentOutput: true
@@ -18,7 +18,7 @@ export const installComponents = (_, subSubTask) =>
     },
     {
       title: 'Select miner',
-      enabled: ctx => ctx.platform?.miners,
+      enabled: ctx => ctx.platform?.miners?.length,
       skip: ctx => ctx.options.install && !ctx.options.installMiner,
       task: selectMiner,
       options: {

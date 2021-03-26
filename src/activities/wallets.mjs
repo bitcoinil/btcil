@@ -1,4 +1,5 @@
 import chalk from "chalk"
+export const LAUNCH = new Date(Date.UTC(2021, 3, 1, 17))
 
 export const selectWallet = async (ctx, task) =>
 task.newListr(parent => 
@@ -22,6 +23,18 @@ task.newListr(parent =>
 
         if (!installWallet)
           parent.output = 'No'
+      }
+    },
+    {
+      title: 'Mainnet launching on April 1st',
+      skip: () => ctx.options.testnet || ctx.options.confirm || (Date.now() > LAUNCH),
+      enabled: () => (Date.now() < LAUNCH),
+      task: async (_, subTask) => {
+        ctx.options.testnet = await subTask.prompt({
+          type: 'confirm',
+          message: 'Use Testnet?',
+          initial: true
+        })
       }
     },
     {
