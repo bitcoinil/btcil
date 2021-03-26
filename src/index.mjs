@@ -10,6 +10,7 @@ import { getSystemModule } from './platforms/index.mjs'
 import { activities } from './activities/index.mjs'
 import { prepareProperties } from './tasks/system-tasks.mjs'
 import { prepareInstaller } from './activities/install-components.mjs'
+import { getPackageJson } from './utils.mjs'
 
 const mainTasks = new Listr([
   {
@@ -46,32 +47,34 @@ async function initialize () {
   const os = osName()
   const platform = await getSystemModule(os)
   const runIndex = await countRuns()
+  const packageJson = await getPackageJson()
 
   const program = new Command();
 
   let _l
   
   program
-    .command('btcil')
+    .name(packageJson.name)
+    .version(packageJson.version)
     .description('Run the BTCIL Automated Wizard')
-    .addOption(new Option('-i, --install [wallet]', 'Install BitcoinIL wallet').choices(platform.wallets.map(({name}) => name)))
+    .addOption(new Option('-i, --install [wallet]', 'Install BitcoinIL wallet').choices(platform.wallets?.map(({name}) => name)))
     .addOption(new Option('-m, --install-miner [type]', 'Install BitcoinIL Compatible Miner'))
-    .addOption(new Option('-b, --build', 'Build wallet/miner from source' + `${(_l = platform.wallets.filter(({build}) => build)) && _l.length ? ` (supported wallets: ${_l.map(({name}) => name).join(', ')})` : ' (not supported)'}`))
+    .addOption(new Option('-b, --build', 'Build wallet/miner from source' + `${(_l = platform.wallets?.filter(({build}) => build)) && _l.length ? ` (supported wallets: ${_l.map(({name}) => name).join(', ')})` : ' (not supported)'}`))
     .addOption(new Option('-t, --testnet', 'Use testnet'))
     .addOption(new Option('-p, --password <string>', 'Use pre-defined password'))
     .addOption(new Option('-c, --confirm', 'Confirm all user prompts automatically'))
-    // .addOption(new Option('-s, --silent', 'Silent (unattended) operation - suppress all output except errors'))
     .addOption(new Option('-o, --ignore-certificate', 'Supress certificate mismatch errors'))
     .addOption(new Option('-is, --ignore-signatures', 'Supress file signature errors'))
     .addOption(new Option('-sd, --skip-downloads', 'Avoid re-downloading assets'))
     .addOption(new Option('-j, --json-rpc', 'Configure JSON-RPC'))
     .addOption(new Option('-d, --debug', 'Debug').hideHelp())
-    .parse();
+    .addOption(new Option('-m, --mock <target>', 'Mock target platform (ignore host platform identification)').hideHelp())
+    .parse()
   
   const options = program.opts();
-
+  
   options.debug && console.log('What are options:', options)
-
+  
   if (options.doLongWork) {
     let frameNumber = 0
     const spinner = cliSpinners.aesthetic
