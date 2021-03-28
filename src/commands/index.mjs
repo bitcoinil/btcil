@@ -1,0 +1,7 @@
+import wallet from './wallet/index.mjs'
+import wizard from './wizard/index.mjs'
+
+export default async function commands (program, context) {
+  // wallet(program, context)
+  await wizard(program, context)
+}

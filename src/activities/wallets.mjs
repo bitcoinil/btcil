@@ -109,7 +109,11 @@ export const installWallet = (ctx, task) =>
       task: ctx.platform.wallets.find(({name}) => name === ctx.selections.wallet).download
     },
     {
-      task: (_ctx, subTask) => {
+      task: async (_ctx, subTask) => {
+        const { set } = await import('../local-storage')
+        const name = ctx.selections.wallet
+        set('installed-wallets', v => [
+          ...(v || []).filter((n) => n !== name), name])
         parent.output = 'Wallet installed successfully'
       },
       options: {
@@ -124,6 +128,18 @@ export const buildWallet = (ctx, task) =>
       title: 'Download wallet sources...',
       task: async () => {
         // await sleep(12000)
+      }
+    }
+  ])
+
+export const configureWallet = (ctx, task) =>
+  task.newListr([
+    {
+      title: 'Select configuration option',
+      task: async (_, subTask) => {
+        await subTask.prompt({
+          type: 'confirm'
+        })
       }
     }
   ])
