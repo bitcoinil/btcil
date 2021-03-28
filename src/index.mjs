@@ -45,38 +45,9 @@ initialize()
 
 async function initialize () {
   // Load Args
-  const os = osName()
-  const platform = await getSystemModule(os)
-  const runIndex = await countRuns()
-  const packageJson = await getPackageJson()
-
   const program = new Command();
-
-  let _l
   
-  program
-    .name(packageJson.name)
-    .version(packageJson.version)
-    .description('Run the BTCIL Automated Wizard')
-    .addOption(new Option('-i, --install [wallet]', 'Install BitcoinIL wallet').choices(platform.wallets?.map(({name}) => name)))
-    .addOption(new Option('-m, --install-miner [type]', 'Install BitcoinIL Compatible Miner'))
-    .addOption(new Option('-b, --build', 'Build wallet/miner from source' + `${(_l = platform.wallets?.filter(({build}) => build)) && _l.length ? ` (supported wallets: ${_l.map(({name}) => name).join(', ')})` : ' (not supported)'}`))
-    .addOption(new Option('-t, --testnet', 'Use testnet'))
-    .addOption(new Option('-p, --password <string>', 'Use pre-defined password'))
-    .addOption(new Option('-c, --confirm', 'Confirm all user prompts automatically'))
-    .addOption(new Option('-o, --ignore-certificate', 'Supress certificate mismatch errors'))
-    .addOption(new Option('-is, --ignore-signatures', 'Supress file signature errors'))
-    .addOption(new Option('-sd, --skip-downloads', 'Avoid re-downloading assets'))
-    .addOption(new Option('-j, --json-rpc', 'Configure JSON-RPC'))
-    .addOption(new Option('-d, --debug', 'Debug').hideHelp())
-    .addOption(new Option('-x, --mock <target>', 'Mock target platform (ignore host platform identification)').hideHelp())
-  
-    
-  cli.init(program)
-  program.parse()
-  
-  const options = program.opts();
-  options.debug && console.log('What are options:', options)
+  const { runIndex, options } = await cli.init(program)
   
   if (options.doLongWork) {
     let frameNumber = 0

@@ -18,5 +18,11 @@ export const welcome = (extra) => {
     margin: 1,
     borderStyle: 'doubleSingle'
   }
-  return boxen(message, options)
+  try {
+
+    const res = boxen(message, options)
+    return res
+  } catch (err) {
+    return message
+  }
 }

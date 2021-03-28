@@ -1,6 +1,7 @@
 import tmp from 'tmp'
 import { readFile, unlink } from 'fs/promises'
 import fs from 'fs'
+import os from 'os'
 import { parse } from 'yaml'
 import path from 'path'
 import { setItem, getItem, removeItem } from './local-storage.mjs'
@@ -35,6 +36,7 @@ export async function getTempDir (createDir = true) {
         resolve(path)
       });
     })
+  return existingTempDir
 }
 
 const propsCache = {}
@@ -148,3 +150,17 @@ export function readableBytes(bytes) {
   return (bytes / Math.pow(1024, i)).toFixed(2) * 1 + ' ' + sizes[i];
 }
 
+export const makeContext = async (base = {}, options) => {
+  const pkg = await getPackageJson()
+  const ctx = {
+    ...(base || {}),
+    options,
+    paths: {
+      temp: await getTempDir(options.confirm ?? false),
+      home: os.homedir(),
+      btcil: os.homedir() + '/.' + pkg.name
+    }
+  }
+
+  return ctx
+}
