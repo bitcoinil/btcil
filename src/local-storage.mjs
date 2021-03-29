@@ -25,7 +25,7 @@ export const get = async (key) => {
 }
 
 export const set = (key, value) => {
-  const current = getItem(JSON_STORAGE_KEY)
+  const current = getItem(JSON_STORAGE_KEY) || {}
   const nextValue = typeof value === 'function'
     ? value(current[key])
     : value
