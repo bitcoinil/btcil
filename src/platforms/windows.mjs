@@ -15,6 +15,17 @@ export const wallets = [
   {
     name: 'core',
     title: 'BitcoinIL Core',
+    run: async (ctx) => {
+      const { spawn } = await import('child_process')
+
+      const useTestnet = ctx.options?.testnet
+      const cmd = `C:\\Program Files\\BitcoinIL\\bitcoinil-qt.exe`
+      const child = spawn(cmd, [useTestnet ? '-testnet' : ''], {
+        detached: true,
+        stdio: 'ignore'
+      })
+      child.unref()
+    },
       download: (ctx, task) => 
         task.newListr(parent => [
           {
@@ -109,13 +120,7 @@ export const wallets = [
               const { spawn } = await import('child_process')
 
               const useTestnet = ctx.options.testnet
-              // || await subTask.prompt({
-              //   type: 'Toggle',
-              //   message: 'Run Testnet Wallet',
-              //   enabled: 'Yes',
-              //   disabled: 'No',
-              //   initial: true
-              // })
+
               const cmd = `C:\\Program Files\\BitcoinIL\\bitcoinil-qt.exe`
               subTask.output = 'Running wallet...'
               const child = spawn(cmd, [useTestnet ? '-testnet' : ''], {
@@ -127,14 +132,7 @@ export const wallets = [
             options: {
               // bottomBar: Infinity
             }
-          },
-          // {
-          //   title: 'working',
-          //   task: async (_, subTask) => {
-          //     subTask.output = 'Fullpath: ' + ctx._downloadFullpath
-          //     await subTask.prompt({ type: 'confirm', message: 'proceed' })
-          //   }
-          // }
+          }
         ]),
     // build: () => new Observable(async observer => {
     //   observer.next('Building BitcoinIL Core!!!')
@@ -144,7 +142,7 @@ export const wallets = [
   },
 ]
 
-export const miners = [
+export const miners = [] || [
   {
     title: 'CPUMiner-OPT',
     name: 'cpuminer-opt',

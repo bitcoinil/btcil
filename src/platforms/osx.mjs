@@ -1,8 +1,5 @@
 import chalk from 'chalk'
 import path from 'path'
-import Observable from 'zen-observable'
-import { downloadFile } from '../utils.mjs'
-import { sleep } from '../utils.mjs'
 import fs, { constants } from 'fs'
 import { makeFileIntegrityCheck } from '../tasks.mjs'
 import { configureJSONRPC } from '../tasks.mjs'
@@ -18,6 +15,13 @@ export const wallets = [
   {
     name: 'core',
     title: 'BitcoinIL Core',
+    run: async () => {
+      const { exec } = await import('child_process')
+      const cmd = `open /Applications/BitcoinIL-Qt.app`
+      return new Promise(r => exec(cmd, (err, stdout, stderr) => {
+        r([err, stdout, stderr])
+      }))
+    },
     download: (ctx, task) => 
       task.newListr(parent => [
         {
@@ -145,11 +149,6 @@ export const wallets = [
           }
         }
       ]),
-    // build: () => new Observable(async observer => {
-    //   observer.next('Building BitcoinIL Core!!!')
-    //   await sleep(4000)
-    //   observer.complete()
-    // })
   },
   // {
   //   title: 'BitcoinIL Electrum',

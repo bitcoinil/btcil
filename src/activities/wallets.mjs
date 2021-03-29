@@ -110,7 +110,7 @@ export const installWallet = (ctx, task) =>
     },
     {
       task: async (_ctx, subTask) => {
-        const { set } = await import('../local-storage')
+        const { set } = await import('../local-storage.mjs')
         const name = ctx.selections.wallet
         set('installed-wallets', v => [
           ...(v || []).filter((n) => n !== name), name])
