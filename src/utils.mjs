@@ -125,6 +125,21 @@ export async function compareCertificates (certificate) {
   return local.trim() === certificate.trim()
 }
 
+
+export const extractZipFile = async (sourceFile, destinationDirectory) => {
+  const AdmZip = (await import('adm-zip')).default
+
+  try {
+    const zip = new AdmZip(sourceFile)
+    const zipEntries = zip.getEntries()
+    await zip.extractAllToAsync(destinationDirectory, true)
+    return zipEntries
+  } catch (err) {
+    return err
+  }
+}
+  
+
 export function getPackageJson () {
   const pathname = path.normalize(getDirName() + '/../').replace(/^\\/g, '')
   const data = fs.readFileSync(pathname + 'package.json')

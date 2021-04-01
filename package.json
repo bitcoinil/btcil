@@ -30,6 +30,7 @@
   },
   "homepage": "https://github.com/bitcoinli/bitil#readme",
   "dependencies": {
+    "adm-zip": "^0.5.4",
     "bitcoin-core": "^3.0.0",
     "boxen": "^5.0.0",
     "chalk": "^4.1.0",

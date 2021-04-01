@@ -180,6 +180,26 @@ export const makeGenerateAddress = (ctxName = 'address') =>
           const result = await ctx.client.getNewAddress(ctx.options.label, ctx.options.address)
           ctx[ctxName] = result
         }
+      },
+      {
+        // title: 'Save address to local storage',
+        task: async (_, subTask) => {
+          const { set } = await import('../local-storage.mjs')
+          set('generated-addresses', v => ({
+            ...v,
+            [ctx.options.testnet ? 'test' : 'main']:
+              [
+                ...(v?.[ctx.options.testnet ? 'test' : 'main'] || []),
+                {
+                  address: ctx[ctxName],
+                  label: ctx.options.label,
+                  wallet: ctx.walletName,
+                  type: ctx.options.address,
+                  created: Date.now()
+                }
+              ]
+          }))
+        }
       }
     ])
 

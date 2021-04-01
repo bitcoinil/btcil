@@ -8,6 +8,7 @@ import { downloadFileTask } from '../tasks.mjs'
 import { makeFileIntegrityCheck } from '../tasks.mjs'
 import { configureJSONRPC } from '../tasks.mjs'
 import { makeDownloadFileTask } from '../tasks.mjs'
+import { extractZipFile } from '../utils.mjs'
 
 const { access, unlink } = fs.promises
 export const platform = 'windows'
@@ -142,10 +143,84 @@ export const wallets = [
   },
 ]
 
-export const miners = [] || [
+export const miners = [
   {
     title: 'CPUMiner-OPT',
     name: 'cpuminer-opt',
+    start: (ctx, task) =>
+      task.newListr(parent => [
+        {
+          title: 'Run Miner',
+          task: async (_, subTask) => {
+            subTask.output = 'Running miner...'
+            const { spawn } = await import('child_process')
+            const fullpath = ctx.execPath = ctx.miner.path + '/' + 'cpuminer-aes-sse42.exe'
+
+            const args = ctx.execArgs = [
+              `--coinbase-addr=${ctx.options.output}`,
+              `--algo=x17`,
+              `-o ${ctx.options.hostname}`,
+              `-u ${ctx.options.username}`,
+              `-p ${ctx.options.password}`,
+              `--no-stratum`,
+              `--no-longpoll`,
+              `-t ${ctx.options.threads}`,
+              `--debug`
+            ]
+            subTask.output = JSON.stringify({ fullpath, args }, 1, 1)
+            // await subTask.prompt({
+            //   type: 'confirm',
+            //   message: 'before'
+            // })
+            subTask.output = `${fullpath} ${args.join(' ')}`
+            ctx.result = `${fullpath} ${args.join(' ')}`
+            ctx.exec = ctx.result
+
+            const { writeFile } = (await import('fs')).promises
+            const bat = `cpuminer-aes-sse42.exe ${args.join(' ')}`
+            const batname = `run${ctx.options.testnet ? '-testnet' : ''}.bat`
+            await writeFile(ctx.miner.path + '/' + batname, bat)
+
+            subTask.title = chalk`\n\nYou can now run the file {cyan ${batname}} which will launch the miner`
+            ctx.batfile = ctx.miner.path + '/' + batname
+
+            // const child = spawn(fullpath, args)
+            // child.on('message', (...r) => {
+            //   subTask.output = 'RES: ' + JSON.stringify(r, 1, 1)
+            // })
+            // subTask.output = JSON.stringify({ child }, 1, 1)
+            // await subTask.prompt({
+            //   type: 'confirm',
+            //   message: 'after'
+            // })
+            
+            // child.stdout.on('data', (data) => {
+            //   subTask.output = data
+            // });
+            // child.stderr.on('data', (data) => {
+            //   subTask.output = errorBox(9101, data)
+            // });
+            // return new Promise((resolve) => {
+            //   child.on('exit', function (code, signal) {
+            //     // console.log('child process exited with ' +
+            //     //             `code ${code} and signal ${signal}`);
+            //     subTask.output = 'closed: ${code} ${signal}'
+            //     resolve()
+            //   });
+            // })
+            // return child
+          },
+          options: {
+            persistentOutput: true,
+            bottomBar: Infinity
+          }
+        }
+      ], {
+        rendererOptions: {
+          persistentOutput: true,
+          bottomBar: Infinity
+        }
+      }),
     download: (ctx, task) =>
       task.newListr(parent => [
         {
@@ -195,7 +270,163 @@ export const miners = [] || [
                                   saveFilename: ctx._minerBasename
                                 })(_, subTask)
         },
-      ])
+        {
+          title: 'Verify file integrity',
+          task: (_, subTask) => makeFileIntegrityCheck(ctx._downloadFullpath, `binaries/windows/wallets/${ctx._minerBasename}`)(_, subTask),
+        },
+        // { task: },
+        {
+          title: 'Select installation directory',
+          task: async (_, subTask) => {
+            const cwd = ctx.cwd = process.cwd()
+            const { get } = await import('../local-storage.mjs')
+            let localInstallPath = ctx.localInstallPath = get('local-install-path')
+
+            subTask.output = chalk`Current directory: {cyan ${cwd}}`
+            if (localInstallPath) 
+              subTask.output = chalk`Previously used directory: {cyan ${localInstallPath}}`
+            
+            ctx.suggestedPath = 'C:\\BTCIL'
+            
+            ctx.selectDir = ctx.options.currentDir
+              ? 'Current'
+              : (ctx.options.dir
+              || (
+                ctx.options.confirm
+                ? ctx.localInstallPath || ctx.suggestedPath
+                : await subTask.prompt({
+                  type: 'select',
+                  message: 'Where would you like to install the miner to?',
+                  choices: [
+                    ...localInstallPath ? [
+                      chalk`Previously used [{cyan ${ctx.localInstallPath}}]`,
+                      chalk`Current directory [{cyan ${ctx.cwd}}]`,
+                    ] : [
+                      chalk`Current directory [{cyan ${ctx.cwd}}]`,
+                      chalk`Previously used [{cyan ${ctx.localInstallPath}}]`,
+                    ],
+                    ctx.suggestedPath,
+                    'Custom'
+                  ]
+                })
+              ))
+          },
+          options: {
+            bottomBar: Infinity
+          }
+        },
+        {
+          title: 'Set custom installation path',
+          enabled: () => ctx.selectDir === 'Custom',
+          task: async (_, subTask) => {
+            ctx.installPath = (await subTask.prompt({
+              type: 'input',
+              message: 'Enter directory',
+              initial: ctx.suggestedPath
+            }))
+          }
+        },
+        {
+          title: 'Set custom installation path',
+          enabled: () => ctx.selectDir !== 'Custom',
+          task: async (_, subTask) => {
+            ctx.installPath = ctx.selectDir.match(/^Current/)
+              ? ctx.cwd
+              : ctx.options.confirm
+              ? ctx.suggestedPath
+              : ctx.selectDir.match(/^Previous/)
+              ? ctx.localInstallPath
+              : ctx.selectDir
+          }
+        },
+        {
+          // title: 'Persist installation directory to local storage',
+          enabled: () => !ctx.options.confirm,
+          task: async (_, subTask) => {
+            const { set } = await import('../local-storage.mjs')
+            set('local-install-path', ctx.installPath)
+          }
+        },
+        {
+          // title: 'Make output path',
+          task: async (_, subTask) => {
+            ctx.outputPath = ctx.installPath + '/cpuminer-opt'
+          }
+        },
+        {
+          // title: 'Create working directory',
+          task: async (_, subTask) => {
+            const { get } = await import('../local-storage.mjs')
+            
+            // await subTask.prompt({
+            //   type: 'confirm',
+            //   message: 'install path: ' + ctx.installPath
+            // })
+
+            subTask.output = chalk`Ouptut Path: {cyan ${ctx.outputPath}}`
+            await subTask.prompt({
+              type: 'confirm',
+              message: 'Extracting: ' + ctx._downloadFullpath
+            })
+            const entries = await extractZipFile(ctx._downloadFullpath, ctx.outputPath)
+
+            // subTask.output = JSON.stringify(entries, 1, 1)
+            // await subTask.prompt({
+            //   type: 'confirm'
+            // })
+            // let localInstallPath = get('local-install-path')
+            // if (!localInstallPath) {
+            //   const cwd = process.cwd()
+            //   // await subTask.prompt({
+            //   //   type: 'confirm',
+            //   //   message: 'current working dir: ' + cwd
+            //   // })
+            //   localInstallPath = !ctx.options.confirm
+            //     ? subTask.prompt({
+            //       type: 'input',
+            //       message: 'Enter directory where youd like to install wallets to',
+            //       initial: 'C:\\btcil\\cpuminer-opt'
+            //     })
+            //     : 'C:\\btcil\\cpuminer-opt'
+            // }
+          },
+          options: {
+            bottomBar: Infinity
+          }
+        },
+        {
+          // title: 'Store installed data',
+          task: async (_, subTask) => {
+            const { set } = await import('../local-storage.mjs')
+            set('installed-miners', v => ([
+              ...(v || [])
+                .filter(({name}) => !!name)
+                .filter(({name}) => name !== 'cpuminer-opt'),
+              {
+                name: 'cpuminer-opt',
+                installTime: Date.now(),
+                path: ctx.outputPath
+              }
+            ]))
+          }
+        },
+        {
+          title: 'Miner Ready',
+          task: async (_, subTask) => {
+            subTask.output = 'Miner ready - you can now start mining by running:'
+            subTask.output = chalk`\n$ {cyan btcil miner start}\n\n`
+          },
+          options: {
+            bottomBar: Infinity,
+            persistentOutput: true
+          }
+        }
+      ], {
+        rendererOptions: {
+          persistentOutput: true,
+          showTimer: true
+        }
+      })
     // }
   }
 ]
