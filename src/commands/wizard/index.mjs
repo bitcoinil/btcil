@@ -23,8 +23,10 @@ export default async function wizard (program, context) {
     .description('Run the BTCIL Automated Wizard')
     .addOption(new Option('-i, --install [wallet]', 'Install BitcoinIL wallet').choices(platform.wallets?.map(({name}) => name)))
     .addOption(new Option('-b, --build', 'Build wallet/miner from source' + `${(_l = platform.wallets?.filter(({build}) => build)) && _l.length ? ` (supported wallets: ${_l.map(({name}) => name).join(', ')})` : ' (not supported)'}`))
-    .addOption(new Option('-m, --install-miner [type]', 'Install BitcoinIL Compatible Miner'))
+    .addOption(new Option('-m, --install-miner [miner]', 'Install BitcoinIL Compatible Miner').choices(platform.miners?.map(({name}) => name)))
     .addOption(new Option('-b, --build', 'Build wallet/miner from source' + `${(_l = platform.wallets?.filter(({build}) => build)) && _l.length ? ` (supported wallets: ${_l.map(({name}) => name).join(', ')})` : ' (not supported)'}`))
+    .addOption(new Option('-d, --dir <path>', 'Provide a custom directory for installations'))
+    .addOption(new Option('-cd, --current-dir', 'Use current dir for installation'))
     .addOption(new Option('-t, --testnet', 'Use testnet'))
     .addOption(new Option('-p, --password <string>', 'Use pre-defined password'))
     .addOption(new Option('-c, --confirm', 'Confirm all user prompts automatically'))
@@ -32,7 +34,7 @@ export default async function wizard (program, context) {
     .addOption(new Option('-is, --ignore-signatures', 'Supress file signature errors'))
     .addOption(new Option('-sd, --skip-downloads', 'Avoid re-downloading assets'))
     .addOption(new Option('-j, --json-rpc', 'Configure JSON-RPC'))
-    .addOption(new Option('-d, --debug', 'Debug').hideHelp())
+    .addOption(new Option('--debug', 'Debug').hideHelp())
     .addOption(new Option('-x, --mock <target>', 'Mock target platform (ignore host platform identification)').hideHelp())
     .addOption(new Option('-pt, --paths [pathname]', 'Show paths (use with -c to create tempDir)').hideHelp())
     .action(wizardAction(context))
@@ -106,7 +108,6 @@ const mainTasks = new Listr([
       persistentOutput: true
     }
   },
-  
   {
     title: 'Activities',
     task: activities,
@@ -114,7 +115,6 @@ const mainTasks = new Listr([
       persistentOutput: true
     }
   },
-
 ],
 { concurrent: false }
 )

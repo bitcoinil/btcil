@@ -19,20 +19,26 @@ export function removeItem(key) {
 
 const JSON_STORAGE_KEY = 'json-storage'
 
-export const get = async (key) => {
-  const current = getItem(JSON_STORAGE_KEY)
-  return key ? current[key] : current
+export const get = (key) => {
+  try {
+    const raw = getItem(JSON_STORAGE_KEY)
+    const current = JSON.parse(raw) || {}
+    return Object.keys(current).length && key ? current?.[key] : current
+  } catch (err) {
+    // noop
+  }
 }
 
 export const set = (key, value) => {
-  const current = getItem(JSON_STORAGE_KEY) || {}
+  if (!key) throw new Error('Cannot set without a key')
+  const current = get()
   const nextValue = typeof value === 'function'
-    ? value(current[key])
+    ? value(current?.[key])
     : value
 
   const nextStorage = lodash.merge({}, current, {
     [key]: nextValue
   })
 
-  return setItem(JSON_STORAGE_KEY, nextStorage)
+  return setItem(JSON_STORAGE_KEY, JSON.stringify(nextStorage))
 }

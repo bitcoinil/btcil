@@ -58,6 +58,11 @@ export const selectActivity = async (ctx, task) =>{
   ctx.activity = await task.prompt({
     type: 'select',
     message: 'Select activity',
-    choices: ['Install Components', 'Download Components', 'Configuration Assistant', 'Exit']
+    choices: [
+      'Install Components',
+      // 'Download Components',
+      // 'Configuration Assistant',
+      'Exit'
+    ]
   })
 }

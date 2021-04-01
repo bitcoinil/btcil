@@ -113,7 +113,7 @@ export const installWallet = (ctx, task) =>
         const { set } = await import('../local-storage.mjs')
         const name = ctx.selections.wallet
         set('installed-wallets', v => [
-          ...(v || []).filter((n) => n !== name), name])
+          ...(v || []).filter(({ name }) => n !== name), name])
         parent.output = 'Wallet installed successfully'
       },
       options: {
