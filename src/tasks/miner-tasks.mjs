@@ -163,7 +163,7 @@ task.newListr(parent => [
         subTask.output = chalk`$ {cyan btcil wallet configure json-rpc -t}`
         throw new Error('Missing configuration')
       }
-      const data = ctx.walletConf = ctx.options.testnet
+      ctx.walletConf = ctx.options.testnet
         ? {
           ...conf.test?.rpcuser ? { username: conf.test?.rpcuser } : {},
           ...conf.test?.rpcpassword ? { password: conf.test?.rpcpassword } : {},
@@ -176,8 +176,6 @@ task.newListr(parent => [
           hostname: 'http://localhost:' + (conf.rpcport || '8332'),
           port: conf.rpcport || 8332
         }
-      subTask.output = "data: " + JSON.stringify(data, 1, 1)
-      await subTask.prompt({ type: 'confirm', message: 'ready' })
     },
     options: {
       persistentOutput: true,
