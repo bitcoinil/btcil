@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bitcoinli/btcil.git"
+    "url": "git+https://github.com/bitcoinil/btcil.git"
   },
   "keywords": [
     "bitcoin",
@@ -26,9 +26,9 @@
   "author": "Eli Sklar",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/bitcoinli/bitil/issues"
+    "url": "https://github.com/bitcoinil/btcil/issues"
   },
-  "homepage": "https://github.com/bitcoinli/bitil#readme",
+  "homepage": "https://github.com/bitcoinil/btcil#readme",
   "dependencies": {
     "adm-zip": "^0.5.4",
     "bitcoin-core": "^3.0.0",
